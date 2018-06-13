@@ -1,0 +1,140 @@
+#compdef bosh
+
+# --------------
+# ----- Commands
+# --------------
+
+__version() {
+  # no arguments
+}
+
+# ------------------
+# ----- end Commands
+# ------------------
+
+# -------------------
+# ----- 1st Arguments
+# -------------------
+
+local -a _1st_arguments
+_1st_arguments=(
+"add-blob":"Add blob"
+"alias-env":"Alias environment to save URL and CA certificate"
+"attach-disk":"Attaches disk to an instance" 
+"blobs":"List blobs"
+"cancel-task":"Cancel task at its next checkpoint"
+"clean-up":"Clean up releases, stemcells, disks, etc."
+"cloud-check":"Cloud consistency check and interactive repair"
+"cloud-config":"Show current cloud config"
+"config":"Show current config for either ID or both type and name"
+"configs":"List configs"
+"cpi-config":"Show current CPI config"
+"create-env":"Create or update BOSH environment"
+"create-release":"Create release"
+"delete-config":"Delete config"
+"delete-deployment":"Delete deployment"
+"delete-disk":"Delete disk"
+"delete-env":"Delete BOSH environment"
+"delete-release":"Delete release"
+"delete-snapshot":"Delete snapshot"
+"delete-snapshots":"Delete all snapshots in a deployment"
+"delete-stemcell":"Delete stemcell"
+"delete-vm":"Delete VM"
+"deploy":"Update deployment"
+"deployment":"Show deployment information"
+"deployments":"List deployments"
+"diff-config":"Diff two configs by ID"
+"disks":"List disks"
+"environment":"Show environment"
+"environments":"List environments"
+"errands":"List errands"
+"event":"Show event details"
+"events":"List events"
+"export-release":"Export the compiled release to a tarball"
+"finalize-release":"Create final release from dev release tarball"
+"generate-job":"Generate job"
+"generate-package":"Generate package"
+"help":"Show this help message"
+"ignore":"Ignore an instance"
+"init-release":"Initialize release"
+"inspect-release":"List release contents such as jobs"
+"instances":"List all instances in a deployment"
+"interpolate":"Interpolates variables into a manifest"
+"locks":"List current locks"
+"log-in":"Log in"
+"log-out":"Log out"
+"logs":"Fetch logs from instance(s)"
+"manifest":"Show deployment manifest"
+"orphan-disk":"Orphan disk"
+"recreate":"Recreate instance(s)"
+"releases":"List releases"
+"remove-blob":"Remove blob"
+"repack-stemcell":"Repack stemcell"
+"reset-release":"Reset release"
+"restart":"Restart instance(s)"
+"run-errand":"Run errand"
+"runtime-config":"Show current runtime config"
+"scp":"SCP to/from instance(s)"
+"snapshots":"List snapshots"
+"ssh":"SSH into instance(s)"
+"start":"Start instance(s)"
+"stemcells":"List stemcells"
+"stop":"Stop instance(s)"
+"sync-blobs":"Sync blobs"
+"take-snapshot":"Take snapshot"
+"task":"Show task status and start tracking its output"
+"tasks":"List running or recent tasks"
+"unignore":"Unignore an instance"
+"update-cloud-config":"Update current cloud config"
+"update-config":"Update config"
+"update-cpi-config":"Update current CPI config"
+"update-resurrection":"Enable/disable resurrection"
+"update-runtime-config":"Update current runtime config"
+"upload-blobs":"Upload blobs"
+"upload-release":"Upload release"
+"upload-stemcell":"Upload stemcell"
+"variables":"List variables"
+"vendor-package":"Vendor package"
+"vms":"List all VMs in all deployments"
+)
+# -----------------------
+# ----- end 1st Arguments
+# -----------------------
+
+local -a _deployment_list
+_deployment_list=(
+$(bosh deployments --json | jq -r ".Tables[].Rows[].name")
+)
+
+local -a _releases_list
+_releases_list=(
+$(bosh releases --json| jq -r '.Tables[].Rows[]|.name+"/"+.version')
+)
+
+# ----------
+# ----- Main
+# ----------
+
+_arguments '*:: :->command'
+
+if (( CURRENT==1 )); then 
+	_describe -t commands "bosh command" _1st_arguments
+	return
+else
+  case "$words[1]" in
+  delete-deployment)
+        [ "$words[2]" != "-d" ] && compadd -Q "$@" -- "-d" && return 
+	_describe -t commands "bosh delete-deployment" _deployment_list
+  	return;;
+  delete-release)
+	_describe -t commands "bosh delete-release" _releases_list
+  	return;;
+  *)	_files;;
+  esac
+fi
+
+local -a _command_args
+case "$words[1]" in
+  version)
+    __version ;;
+esac
