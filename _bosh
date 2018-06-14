@@ -94,7 +94,19 @@ _vms()
 _add_blob()
 {
   # allow only one file
-  [ ! -z $words[2]] && _files
+  [ ! -z $words[2] ] && _files
+  return
+}
+
+_create-release()
+{
+  IFS=$'\n' _arg=($(bosh create-release --help | \
+            tr -s "[:space:]" | \
+            sed -e "1,/^[create-release command options]/d" \
+                -e "s/[[:space:]]https:\/\/bosh\.io.*$//" \
+                -e "s/^[[:space:]]*\([^[:space:]]*\)[[:space:]]*\(.*\)/\1:\2/"))
+
+  _describe -t commands "bosh create-release command" _arg
   return
 }
 
