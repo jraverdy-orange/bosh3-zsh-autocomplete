@@ -1,13 +1,5 @@
 #compdef bosh
 
-# --------------
-# ----- Commands
-# --------------
-
-__version() {
-  # no arguments
-}
-
 _bosh_main_functions()
 {
   local -a _arg
@@ -21,16 +13,30 @@ _bosh_main_functions()
   return
 }
 
+_list_deployments()
+{
+  # this is a function used in many subcommands, offering the deployment list
+  ret=0
+  [ "$words[2]" != "-d" ] && compadd -Q "$@" -- "-d" && ret=1
+  if [ $ret -eq 0 ]
+  then
+    if [[ -z ${words[3]} ]]
+    then
+      local -a _list
+      _list=(
+        $(bosh deployments --json | jq -r ".Tables[].Rows[].name")
+      )
+      _describe -t commands "bosh list deployments" _list
+      ret=1
+    fi
+  fi
+  return $ret
+}
+
 _delete-deployment()
 {
-  [ "$words[2]" != "-d" ] && compadd -Q "$@" -- "-d" && return 
- 
-  local -a _list
-  _list=(
-  $(bosh deployments --json | jq -r ".Tables[].Rows[].name")
-  )
-  _describe -t commands "bosh delete-deployment" _list
-  return
+  _list_deployments
+  [ $? -eq 1 ] && return
 }
 
 _delete-release()
@@ -46,18 +52,8 @@ _delete-release()
 
 _ssh()
 {
-  [ "$words[2]" != "-d" ] && compadd -Q "$@" -- "-d" && return
-
-  if [[ -z ${words[3]} ]]
-  then
-    local -a _list
-    _list=(
-      $(bosh deployments --json | jq -r ".Tables[].Rows[].name")
-    )
-    _describe -t commands "bosh ssh" _list
-    return
-  fi
-
+  _list_deployments 
+  [ $? -eq 1 ] && return
   local -a _vms_list
   IFS=$'\n' _vms_list=(
     $(bosh -d $words[3] vms --json| jq -r '.Tables[].Rows[]|.instance+":"+.ips')
@@ -66,25 +62,40 @@ _ssh()
   return
 }
 
+_vms()
+{
+  _list_deployments
+  [ $? -eq 1 ] && return
+}
+
+_add_blob()
+{
+  # allow only one file
+  [ ! -z $words[2]] && _files
+  return
+}
+
 _bosh()
 {
   _arguments '*:: :->command'
-  ok="ssh delete-release delete-deployment"
+  local -a no_subcommand=(
+    stemcells
+    deployments
+    log-in
+    log-out
+    releases
+    tasks
+    blobs
+  )
   if (( CURRENT==1 )); then
-    #_bosh_main_arguments=$( _bosh_main_functions )
      _bosh_main_functions
-     return
-  elif [ -z "${ok##*$words[1]*}" ]; then
-    eval _${words[1]} 
-  else
-    _files
+  # launch subcommand if it has one   
+  elif [[ -z $(echo "${no_subcommand[@]:0}"|grep -o ${words[1]}) ]]
+  then
+    eval _${words[1]}
   fi
+  return
 
-#  local -a _command_args
-#  case "$words[1]" in
-#    version)
-#      __version ;;
-#  esac
 }
 
 _bosh "$@"
