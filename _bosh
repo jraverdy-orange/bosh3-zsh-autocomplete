@@ -109,6 +109,8 @@ _bosh()
     releases
     tasks
     blobs
+    reset-release
+    sync-blobs
   )
   if (( CURRENT==1 ))
   then
