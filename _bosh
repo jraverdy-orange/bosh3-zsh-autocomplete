@@ -3,7 +3,7 @@
 _check_login()
 {
   # check if logged to a director, elsewhere exit with error message
-  _li=$(bosh env --json|jq -r -s '.Tables[].Rows[].user' 2>/dev/null)
+  _li=$(bosh env --json|jq -r -S '.Tables[].Rows[].user' 2>/dev/null)
   [ $? -ne 0 ] || [[ "$_li" == "(not logged in)" ]] && return 1
   return 0
 }
@@ -102,7 +102,7 @@ _create-release()
 {
   IFS=$'\n' _arg=($(bosh create-release --help | \
             tr -s "[:space:]" | \
-            sed -e "1,/^[create-release command options]/d" \
+            sed -e "1,/^\[create-release command options\]/d" \
                 -e "s/[[:space:]]https:\/\/bosh\.io.*$//" \
                 -e "s/^[[:space:]]*\([^[:space:]]*\)[[:space:]]*\(.*\)/\1:\2/"))
 
