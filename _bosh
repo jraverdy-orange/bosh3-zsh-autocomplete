@@ -1,13 +1,36 @@
 #compdef bosh
 
+_check_login()
+{
+  # check if logged to a director, elsewhere exit with error message
+  _li=$(bosh env --json|jq -r -s '.Tables[].Rows[].user' 2>/dev/null)
+  [ $? -ne 0 ] || [[ "$_li" == "(not logged in)" ]] && return 1
+  return 0
+}
+
 _bosh_main_functions()
 {
+  available=$*
   local -a _arg
-  IFS=$'\n' _arg=($(bosh help | \
-    tr -s "[:space:]" | \
-    sed -e "1,/^Available commands:/d" \
-        -e "s/[[:space:]]https:\/\/bosh\.io.*$//" \
-        -e "s/^[[:space:]]*\([^[:space:]]*\)[[:space:]]*\(.*\)/\1:\2/"))
+  if [[ "$available" == "" ]]
+  then  
+    IFS=$'\n' _arg=($(bosh help | \
+      tr -s "[:space:]" | \
+      sed -e "1,/^Available commands:/d" \
+          -e "s/[[:space:]]https:\/\/bosh\.io.*$//" \
+          -e "s/^[[:space:]]*\([^[:space:]]*\)[[:space:]]*\(.*\)/\1:\2/"))
+  else
+    for i in ${available}
+    do
+      IFS=$'\n' _arg+=$(bosh help | \
+      tr -s "[:space:]" | \
+      sed -e "1,/^Available commands:/d" \
+          -e "s/[[:space:]]https:\/\/bosh\.io.*$//" \
+          -e "s/^[[:space:]]*\([^[:space:]]*\)[[:space:]]*\(.*\)/\1:\2/" | \
+      grep "^$i")
+    done
+  fi  
+
   
   _describe -t commands "bosh command" _arg
   return
@@ -87,8 +110,12 @@ _bosh()
     tasks
     blobs
   )
-  if (( CURRENT==1 )); then
-     _bosh_main_functions
+  if (( CURRENT==1 ))
+  then
+    available=""
+    _check_login
+    [ $? -ne 0 ] && available="log-in"
+    _bosh_main_functions ${available}
   # launch subcommand if it has one   
   elif [[ -z $(echo "${no_subcommand[@]:0}"|grep -o ${words[1]}) ]]
   then
