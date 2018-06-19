@@ -49,6 +49,7 @@ _list_deployments()
       _list=(
         $(bosh deployments --json | jq -r ".Tables[].Rows[].name")
       )
+      [[ -z $(echo $_args|grep -w "NEW") ]] && _list+=""
       _describe -t commands "bosh list deployments" _list
       ret=1
     fi
@@ -91,7 +92,7 @@ _vms()
   [ $? -eq 1 ] && return
 }
 
-_add_blob()
+_add-blob()
 {
   # allow only one file
   [ ! -z $words[2] ] && _files
@@ -100,8 +101,6 @@ _add_blob()
 
 _create-release()
 {
-  ret=0
-
   local -a _arg
 
   _arg=(
@@ -115,7 +114,36 @@ _create-release()
   "":"None"
   )
   _describe -t create-release "bosh create-release" _arg -S ''
-  return $ret
+  return $?
+}
+
+_deploy()
+{
+  case $CURRENT in
+    [2,3])_list_deployments
+      [ $? -eq 1 ] && return;;
+    4)_files ;;
+    *)local -a _arg
+
+      _arg=(
+      "--var=":"Set variable"                                                               
+      "--var-file=":"Set variable to file contents"                                              
+      "--vars-file=":"Load variables from a YAML file"                                            
+      "--vars-env=":"Load variables from environment variables (e.g.: 'MY' to load MY_var=value)"
+      "--vars-store=":"Load/save variables from/to a YAML file"                                    
+      "--ops-file=":"Load manifest operations from a YAML file"                                  
+      "--no-redact":"Show non-redacted manifest diff"                                            
+      "--recreate":"Recreate all VMs in deployment"                                             
+      "--fix":"Recreate unresponsive instances"                                            
+      "--skip-drain":"Skip running drain scripts for specific instance groups"                    
+      "--canaries=":"Override manifest values for canaries"                                      
+      "--max-in-flight=":"Override manifest values for max_in_flight"                                 
+      "--dry-run":"Renders job templates without altering deployment"                          
+
+      )
+      _describe -t deploy "bosh deploy" _arg -S '';;
+  esac
+  return
 }
 
 _bosh()
@@ -139,7 +167,7 @@ _bosh()
     [ $? -ne 0 ] && available="log-in"
     _bosh_main_functions ${available}
   # launch subcommand if it has one   
-  elif [[ -z $(echo "${no_subcommand[@]:0}"|grep -o ${words[1]}) ]]
+  elif [[ -z $(echo "${no_subcommand[@]:0}"|grep -ow ${words[1]}) ]]
   then
     eval _${words[1]}
   fi
