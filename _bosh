@@ -95,7 +95,7 @@ _vms()
 _add-blob()
 {
   # allow only one file
-  [ ! -z $words[2] ] && _files
+  [[ -z $words[2] ]] && _files
   return
 }
 
@@ -143,6 +143,64 @@ _deploy()
       )
       _describe -t deploy "bosh deploy" _arg -S '';;
   esac
+  return
+}
+
+_run-errand()
+{
+  case $CURRENT in
+    [2,3])_list_deployments
+      [ $? -eq 1 ] && return;;
+      4)local -a _arg
+         _arg=($(bosh -d $words[3] errands --json|jq -r ".Tables[].Rows[].name"))
+         _describe -t deploy "bosh deploy" _arg -S '';;
+  esac
+  return
+}
+
+_interpolate()
+{
+  if (( CURRENT == 2 ))
+  then  
+    _files
+  fi
+  return
+}
+
+_cancel-task()
+{
+  if (( CURRENT == 2 ))
+  then  
+    local -a _tasks_list
+    IFS=$'\n' _tasks_list=(
+      $(bosh tasks --json| jq -r '.Tables[].Rows[]|.id+":"+.state+" "+.started_at+" "+.user+" "+.description')
+      )
+    _describe -t commands "bosh ssh" _tasks_list
+  fi
+  return
+}
+
+_task()
+{
+  if (( CURRENT == 2 ))
+  then  
+    local -a _tasks_list
+    IFS=$'\n' _tasks_list=(
+      $(bosh tasks --json| jq -r '.Tables[].Rows[]|.id+":"+.state+" "+.started_at+" "+.user+" "+.description')
+      )
+    _describe -t commands "bosh ssh" _tasks_list
+  else
+    local -a _arg
+    _arg=(
+      "":"None"
+      "--event":"Track event log"
+      "--cpi":"Track CPI log"
+      "--debug":"Track debug log"
+      "--result":"Track result log"
+      "--all":"Include all task types (ssh, logs, vms, etc)"
+      )
+    _describe -t deploy "bosh deploy" _arg -S ''
+  fi
   return
 }
 
