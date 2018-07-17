@@ -163,7 +163,12 @@ _interpolate()
   if (( CURRENT == 2 ))
   then  
     _files
-  fi
+  else
+    if [[ "$words[(( CURRENT-1 ))]" == "-o" ]]
+    then
+      _files
+    fi
+  fi  
   return
 }
 
