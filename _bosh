@@ -164,10 +164,10 @@ _interpolate()
   then  
     _files
   else
-    if [[ "$words[(( CURRENT-1 ))]" == "-o" ]]
-    then
-      _files
-    fi
+    case "$words[(( CURRENT-1 ))]" in 
+      "-o"|"-l")_files;;
+      *);;
+    esac
   fi  
   return
 }
